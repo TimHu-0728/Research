@@ -1,0 +1,78 @@
+clear
+clc
+close all
+
+
+%% 
+% Interpolation data for EMG water-based series ferrofluid (Ferrotec Inc.)
+% URL: https://ferrofluid.ferrotec.com/products/ferrofluid-emg/water/
+% EMG   304, 308 408 507  508  509 605  607  700   705  707  708
+Chi0_data = [5.03 0.5  0.5  1.63 0.88 0.5  3.02 1.63 12.57 4.04 1.51 0.63];               % Initial Susceptibility
+Ms_data   = [27.5 6.6  6.6  11   6.6  3.3  22   11   35.5  22   11   6.6]* 795.7747;      % Saturation Magnetization [A/m]
+phi_data  = [4.5  1.2  1.2  2    1.2  0.6  3.9  2    5.8   3.9  2    1.2];                % Magnetic Particle concentration [%]
+rho_data  = [1240 1060 1070 1120 1070 1030 1180 1100 1290  1190 1100 1080];               % Density @ 25 C [kg/m^3]
+
+
+% Find linear fit curves
+[Ms_phi_cfit,~]=createFit_Ms_phi(phi_data,Ms_data);
+[phi_Chi0_cfit,~]=createFit_phi_chi0(Chi0_data,phi_data);
+[rho_Chi0_cfit, gof1] = createFit_chi0_rho(Chi0_data, rho_data);
+[Ms_rho_cfit, gof2] = createFit_Ms_rho(rho_data, Ms_data);
+
+
+
+
+chi0_line = linspace(0,6,100)';
+rho_chi0_line  = rho_Chi0_cfit(chi0_line);
+phi_chi0_line  = phi_Chi0_cfit(chi0_line);
+
+Ms_rho_line  = linspace(1025,1350,100)';
+Ms_phi_line  = linspace(0,5,100)';
+Ms_line      = Ms_rho_cfit(Ms_rho_line); 
+Ms_line2     = Ms_phi_cfit(Ms_phi_line); 
+
+
+Chi0_data2 = Chi0_data([1:8,10:end])';
+rho_data2  = rho_data([1:8,10:end])';
+phi_data2  = phi_data([1:8,10:end])';
+
+
+
+
+chi0 = 0.1;
+rho  = rho_Chi0_cfit(chi0);
+Ms   = Ms_rho_cfit(rho);
+
+phi  = phi_Chi0_cfit(chi0);
+Ms2  = Ms_phi_cfit(phi);   
+
+
+mkdir data
+writematrix([chi0_line, rho_chi0_line],'data/rho_chi0_line.csv')
+writematrix([Ms_rho_line, Ms_line],'data/Ms_rho_line.csv')
+writematrix([Chi0_data2, rho_data2],'data/rho_chi0_data.csv')
+writematrix([rho_data', Ms_data'],'data/Ms_rho_data.csv')
+writematrix([chi0,rho,Ms],'data/chi0=0.1.csv')
+
+
+writematrix([chi0_line, phi_chi0_line],'data/phi_chi0_line.csv')
+writematrix([Ms_phi_line, Ms_line2],'data/Ms_phi_line.csv')
+writematrix([Chi0_data2, phi_data2],'data/phi_chi0_data.csv')
+writematrix([phi_data', Ms_data'],'data/Ms_phi_data.csv')
+writematrix([chi0,phi,Ms2],'data/chi0=0.1.csv')
+
+
+
+
+
+
+plot(chi0_line,phi_chi0_line)
+hold on
+scatter(Chi0_data2,phi_data2)
+scatter(chi0,phi)
+
+figure
+plot(Ms_phi_line,Ms_line2)
+hold on
+scatter(phi_data',Ms_data')
+scatter(phi,Ms2)

@@ -1,0 +1,6 @@
+herrada@193.147.162.97
+usuario: herrada
+pass: mi-su-ca-33
+matlab: nohup matlab -nodesktop -nodisplay -nosplash -r batchmain &
+
+5022

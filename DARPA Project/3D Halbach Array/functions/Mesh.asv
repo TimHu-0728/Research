@@ -1,0 +1,11 @@
+function [X,Y,Z] = Mesh(xi,xf,yi,yf,zi,zf,gridsz)
+%MESH Summary of this function goes here
+%   Detailed explanation goes here
+
+x    = linspace(xi,x_range,gridsz);
+y    = linspace(-range,range,gridsz);
+z    = linspace(-range,range,gridsz);
+
+[X,Y,Z]          = meshgrid(x_range_large,y_range_large,z_range_large);
+end
+

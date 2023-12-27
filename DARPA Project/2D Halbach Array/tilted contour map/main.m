@@ -1,0 +1,297 @@
+clc
+clear
+close all
+addpath('./used_function')
+
+%% Import Demagnetization curve data of N52 magnets
+% K&J Magnetics Demagnetization curve data for N52 magents in CGS unit
+% URL: https://www.kjmagnetics.com/bhcurves.asp
+
+% Transfer to SI unit
+% Temperature: 20°C
+% % H20  = [-11.30 -11.08 -10.98 -10.84 -10.57 -10.18 0.00 -10.03 -10.49 -10.81 -10.97 -11.08 -11.10]*1e3*1e3/4/pi;    % [A/m]
+% % B20  = [0.00 13.02 13.45 13.74 13.89 14.00 14.38 3.99 3.41 2.93 2.47 1.93 0.00]*1e3*1e-4;                          % [T]
+% % 
+% % % Temperature: 40°C
+% % H40 = [-9.33 -9.11 -8.96 -8.73 -8.29 -7.65 0.00 -8.04 -8.52 -8.84 -9.01 -9.13 -9.19]*1e3*1e3/4/pi;
+% % B40 = [0.00 12.84 13.29 13.60 13.77 13.89 14.18 5.83 5.20 4.63 4.00 3.23 0.00]*1e3*1e-4;
+% % 
+% % % Temperature: 60°C
+% % H60 = [-7.53 -7.32 -7.17 -6.93 -6.48 -5.81 0.00 -6.28 -6.74 -7.06 -7.22 -7.33 -7.42]*1e3*1e3/4/pi;
+% % B60 = [0.00 12.63 13.10 13.42 13.60 13.72 13.94 7.41 6.79 6.22 5.57 4.77 0.00]*1e3*1e-4;
+% % 
+% % % Temperature: 80°C
+% % H80 = [-5.90 -5.70 -5.60 -5.44 -5.13 -4.68 0.00 -4.75 -5.17 -5.45 -5.60 -5.70 -5.80]*1e3*1e3/4/pi;
+% % B80 = [0.00 12.40 12.88 13.21 13.39 13.51 13.67 8.73 8.19 7.70 7.18 6.54 0.00]*1e3*1e-4;
+% % 
+% % % Temperature: 100°C
+% % H100 = [-4.62 -4.42 -4.32 -4.17 -3.87 -3.45 0.00 -3.50 -3.90 -4.18 -4.32 -4.42 -4.53]*1e3*1e3/4/pi;
+% % B100 = [0.00 12.02 12.55 12.91 13.11 13.24 13.36 9.73 9.20 8.73 8.23 7.62 0.00]*1e3*1e-4;
+% % 
+% % % Temperature: 120°C
+% % H120 = [-3.50 -3.31 -3.21 -3.05 -2.76 -2.33 0.00 -2.45 -2.83 -3.08 -3.22 -3.31 -3.43]*1e3*1e3/4/pi;
+% % B120 = [0.00 11.53 12.14 12.56 12.79 12.94 13.03 10.49 9.99 9.55 9.08 8.50 0.00]*1e3*1e-4;
+% % 
+% % % Temperature: 140°C
+% % H140 = [-2.55 -2.38 -2.27 -2.10 -1.79 -1.33 0.00 -1.60 -1.94 -2.17 -2.30 -2.38 -2.50]*1e3*1e3/4/pi;
+% % B140 = [0.00 10.93 11.67 12.17 12.44 12.61 12.67 11.01 10.56 10.16 9.72 9.17 0.00]*1e3*1e-4;
+% % 
+% % data=[H20;B20;H40;B40;H60;B60;H80;B80;H100;B100;H120;B120;H140;B140];
+
+%% One magnet Simulation to tune Mm value to let H_max match H_surf
+
+% H_surf_one  = 6451*79.577;                % [A/m]   Surface Field of one N52 magnet
+% mu0   = 4*pi*1e-7;                   % [N/A^2] Permeability of free space
+% Mm    = 0.56969117;                % Adjust this value to let H_max match H_surf
+% Ke    = Mm/mu0;
+% d     = 0.002;                        % [m]     Gap between magnets
+% w     = 0.0127;                         % [m]     Width
+% h     = 0.0127;                         % [m]     Height
+% r0    = [0 0];                       % [m]     Positions
+% theta = 0;                           % [rad]   Orientations (0: upward; Direction: CCW)
+% 
+% % Sets meshgrids [User Input]
+% gridsz   = 2000;                                             % Grid size for contour plot
+% range    = max(r0(:,1))+w+d;                                 % Range of the plot
+% [X,Y]    = meshgrid(linspace(-range,range,gridsz),linspace(-range/2,range/2,gridsz));
+% 
+% % Calculates B fields
+% [Bx,By]     = calculatingB(mu0,Ke,h,w,X,Y,theta,r0);         % B field for contour plot
+% B           = sqrt(Bx.^2+By.^2);
+% 
+% % Find maximum H around the magnet
+% ind       = zeros(gridsz,gridsz)+ (X >= (r0(1) + w/2)) + (X <= (r0(1) - w/2)) + (Y <= (r0(2)-h/2)) + (Y >= (r0(2)+ h/2));
+% 
+% B_max = max(B(logical(ind)));y
+% H_max_one = B_max / mu0;                                          % [A/m]
+
+
+%% 2D Halbach Array Simulation
+tic
+% Initialize parameters  [User Input]
+% N52
+N_coil = 48;
+mu0   = 4*pi*1e-7;                                    % [N/A^2] Permeability of free space
+Mm    = (1.48/mu0)*ones(N_coil,1);                    % [A/m]   Magnetization
+Ke    = Mm;                                           % [A/m]   Sheet current         
+% Magnets dimensions
+d     = 0.002;                                        % [m]     Gap between magnets 
+% w     = 0.01
+% h     = 0.005
+w     = 1/8*0.0254;                                   % [m]     Width
+h     = 1*0.0254;                                     % [m]     Height
+
+% Magnets Positions and Directions
+% r0    = zeros(N_coil,2);
+% theta = zeros(N_coil,1);
+% for i = 1:N_coil 
+%     r0(i,1) = (-1)^i*((w+d)*(1/2+floor((i-1)/2))) ;
+%     theta(i)= -pi/2+i*pi/2;                     % [rad]   Orientations (0: upward; Direction: CCW)
+% end
+% 
+% r0        = sort(r0);                           % [m]     Positions
+% w_vec     = w*ones(N_coil,1);                   % [m]     Widths 
+% h_vec     = h*ones(N_coil,1);                   % [m]     Heights
+% 
+
+% r0       = [-(1/8*4-1/8/2) 0;
+%             -(1/8*3-1/8/2) 0;
+%             -(1/8*2-1/8/2) 0;
+%             -(1/8*1-1/8/2) 0;
+%             1/8*1-1/8/2 0;
+%             1/8*2-1/8/2 0;
+%             1/8*3-1/8/2 0;
+%             1/8*4-1/8/2 0]*0.0254;
+r0 = zeros(N_coil,2);
+r0(1:N_coil/2,1) = w/2;
+r0(N_coil/2+1:N_coil,1) = -w/2;
+r0(1:N_coil/2,1) = r0(1:N_coil/2,1) - w*[N_coil/2:-1:1]';
+r0(N_coil/2+1:N_coil,1) = r0(N_coil/2+1:N_coil,1) + w*[1:1:N_coil/2]';
+
+% r0 = zeros(N, 2);
+% for i = 1:N
+%     r0(i, 1) = (1/8 * (N - i + 1) - 1/8/2) * 0.0254
+%     r0(i,2) = 0 
+% end
+
+% theta    = deg2rad([0; ...
+%                     90; ...
+%                     180; ...
+%                     270; ...
+%                     0; ...
+%                     90; ...
+%                     180; ...
+%                     270]);
+theta = zeros(N_coil,1);
+theta(1:4:end) = deg2rad(0);
+theta(2:4:end) = deg2rad(90);
+theta(3:4:end) = deg2rad(180);
+theta(4:4:end) = deg2rad(270);
+
+% w_vec    = [1/8;
+%             1;
+%             1/8;
+%             1;
+%             1/8;
+%             1;
+%             1/8;
+%             1]*0.0254;
+
+w_vec = ones(N_coil,1)*w;
+w_vec(2:2:end) = h;
+
+% h_vec    = [1;
+%             1/8;
+%             1;
+%             1/8;
+%             1;
+%             1/8;
+%             1;
+%             1/8]*0.0254;
+h_vec = ones(N_coil,1)*h;
+h_vec(2:2:end) = w;
+
+% Sets meshgrids [User Input]
+gridsz   = 2000;                                             % Grid size for contour plot
+gridsz_q = 50;                                               % Grid size for quiver plot
+rangex    = 1.8*max(r0(:,1));                                               % Range of the plot
+rangey    = 0.8*max(r0(:,1));
+[X,Y]    = meshgrid(linspace(-rangex,rangex,gridsz),linspace(-rangey,rangey,gridsz)+0.01);
+hx_eric = 2*rangex/(gridsz - 1);
+hy_eric = 2*rangey/(gridsz - 1);
+[Xq,Yq]  = meshgrid(linspace(-rangex,rangex,gridsz_q),linspace(-rangey,rangey,gridsz_q)+0.01);
+% Calculations and plotting
+% Calculates B fields [T]
+[Bx,By]     = calculatingB(mu0,Ke,h_vec,w_vec,X,Y,theta,r0);         % B field for contour plot
+[Bx_q,By_q] = calculatingB(mu0,Ke,h_vec,w_vec,Xq,Yq,theta,r0);       % B field for quiver plot
+B           = sqrt(Bx.^2+By.^2);
+
+% % Find maximum B betweem the gaps (Assume coil is horizontally placed)
+% ind       = zeros(gridsz,gridsz)+ (X >= (r0(1,1) - w/2 - d) & X <= (r0(1,1) - w/2) & Y <= (w/2) & Y >= (- w/2));
+% for i=1:N_coil
+%     ind   =  ind + (X >= (r0(i,1) + w/2) & X <= (r0(i,1) + w/2 + d) & Y <= (w/2) & Y >= (- w/2));
+% end
+% 
+% B_max_gap = max(B(logical(ind)));
+% ind_max   = find(abs(B-B_max_gap)<0.000001);
+% X_max     = X(ind_max);
+% Y_max     = Y(ind_max);
+% 
+% % Find the maximum temperature T_max such that N52 magnets, surrounded by 
+% % B_max, will not be demagnetized to 96% of its original value.
+% T_max     = get_Tmax(-B_max_gap,data(:,1:7));                          % [°C]
+% 
+% % Plot the H_max on the demagnetization curve of N52
+% Plotting_result(-B_max_gap / mu0,data)
+
+%% Kelvin Body Force Map
+
+% Ferrofluid parameters 
+chi0     = 0.1;
+[rho,Ms] = get_Rho_Ms(chi0);
+gamma    = 3*chi0/Ms;
+
+Hx       = Bx / mu0;
+Hy       = By / mu0;
+H_norm   = sqrt(Hx.^2+Hy.^2);
+M        = Ms*(coth(gamma*H_norm)-1/gamma./H_norm);
+nx_H     = Hx./H_norm;
+ny_H     = Hy./H_norm;
+M_vec    = cat(3,M.*nx_H,M.*ny_H);
+
+[Hx_x,Hx_y]  = gradient(Hx,hx_eric,hy_eric);
+[Hy_x,Hy_y]  = gradient(Hy,hx_eric,hy_eric);
+
+Fk_x     = mu0 * (dot(M_vec,cat(3,Hx_x,Hx_y),3));
+Fk_y     = mu0 * (dot(M_vec,cat(3,Hy_x,Hy_y),3));
+Fk       = sqrt(Fk_x.^2+Fk_y.^2)/rho/9.81;
+
+% quiver mesh
+gridsz_Fk     = 50;
+[Xq_Fk,Yq_Fk]  =  meshgrid(linspace(-rangex,rangex,gridsz_Fk),linspace(-rangey,rangey,gridsz_Fk)+0.005);
+Fk_x_q     = interp2(X,Y,Fk_x,Xq_Fk,Yq_Fk);
+Fk_y_q     = interp2(X,Y,Fk_y,Xq_Fk,Yq_Fk);
+%% Rosenzweig Instability 
+
+% Ferrofluid layer is EMG water-based series (Ferrotec Corp.) 
+% Physical Properties
+% sigma    = 0.026;                  % Interfacial tension [N/m]
+% g        = 9.806;                  % Gravity acceleration [m/s^2]
+% mu0      = 4*pi*1e-7;              % Permeability of free space [N/A^2]
+% chi0     = [0.1; 1; 1.2; 1.5];                    % Initial Susceptibility
+% [rho,Ms] = get_Rho_Ms(chi0);       % rho: Density [kg/m^3], Ms: Saturation Magnetization [A/m]
+% gamma    = 3*chi0./Ms;                               
+% parameters = [g*ones(size(chi0))';mu0*ones(size(chi0))';rho';Ms';gamma';sigma*ones(size(chi0))'];
+% 
+% Halbach_To_Layer_distance = 0.005;   % [m]
+% y_layer   = max([h w])/2 + Halbach_To_Layer_distance;   
+% ind_layer = find(abs(Y-y_layer)<0.00012);
+% B_layer   = B(ind_layer);
+% Bx_layer  = Bx(ind_layer);
+% H0        = B_layer/mu0;
+% Hx        = Bx_layer/mu0;
+% X_layer   = X(ind_layer);
+% 
+% % Calculate Critical Magnetization Mc and Ferrofluid Magnetization M along
+% % the flat layer
+% Mc = zeros(size(H0,1),size(chi0,1));
+% M  = zeros(size(H0,1),size(chi0,1));
+% for i=1:size(chi0,1)
+%     [Mc(:,i),M(:,i)] = Critical_M_Oblique_Hfield(H0,Hx,parameters(:,i));
+% end
+% plot_magnetizations(X_layer,Mc,Ms,M)
+
+%% Plot 2D Halbach Array with its B field
+% Plot the B field strength contour
+figure
+contourf(X,Y,B,linspace(0,0.6,12))
+c              = colorbar('FontSize',22);
+c.Label.String = 'B field strength (Tesla)';
+hold on
+
+% Plot the magnetized material shapes
+for i = 1:size(r0,1)
+    Plot_magnets(theta(i),w_vec(i),h_vec(i),r0(i,:),1);
+end
+
+% Plot B vector field
+quiver(Xq,Yq,Bx_q,By_q,'Color',[1 1 1])
+axis equal
+
+% Plot Ferrofluid layer
+% plot(X_layer,y_layer*ones(size(X_layer)),'Color',[0.9290 0.6940 0.5000],'LineWidth',3)
+
+grid on
+title('B Field of Halbach Array','FontSize',22)
+xlabel('X (m)','FontSize',18)
+ylabel('Y (m)','FontSize',18)
+% scatter(X_max,Y_max,40,'red','filled')
+% legen=legend('','','','','','','','','','','','','','','Ferrofluid layer','$B_{max}$',fontsize=16);
+% set(legen,'Interpreter','latex')
+
+
+
+%% Plot the Kelvin Body Force contour map
+% x_level        = linspace(0,1.01,15);
+levels         = [linspace(0,120,20)];
+figure
+contourf(X,Y,Fk,levels)
+c              = colorbar('FontSize',22);
+c.Label.String = ' log_{10} (Kelvin Body Force Strength (g))';
+hold on
+
+quiver(Xq_Fk,Yq_Fk,Fk_x_q,Fk_y_q,'r')
+
+% Plot the magnetized material shapes
+for i = 1:size(r0,1)
+    Plot_magnets(theta(i),w_vec(i),h_vec(i),r0(i,:),1);
+end
+
+% Plot Ferrofluid layer
+
+title('Kelvin Body Force of Halbach Array','FontSize',22)
+xlabel('X (m)','FontSize',18)
+ylabel('Y (m)','FontSize',18)
+
+
+

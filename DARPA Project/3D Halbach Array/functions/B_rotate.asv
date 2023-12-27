@@ -1,0 +1,102 @@
+function [Bx_new,By_new,Bz_new] = B_rotate(x,y,z,X,Y,Z,Bx,By,Bz,orient_mag,interp_method)
+%B_MULTIPLE 此处显示有关此函数的摘要
+%   此处显示详细说明
+%%
+R_rev  = transpose(eul2rotm(orient_mag, 'ZYX'));
+R_forw = eul2rotm(orient_mag, 'ZYX');
+
+% Calculate the position vector before the rotation r_old (m)
+XYZ4d  = cat(4,X,Y,Z);
+XYZ4d_old  = reshape((R_rev*reshape(XYZ4d,[],3)')',size(XYZ4d));
+
+X_old  = XYZ4d_old(:,:,:,1);
+Y_old  = XYZ4d_old(:,:,:,2);
+Z_old  = XYZ4d_old(:,:,:,3);
+
+Bx_old = interp3(x,y,z,Bx,X_old,Y_old,Z_old,interp_method);
+By_old = interp3(x,y,z,By,X_old,Y_old,Z_old,interp_method);
+Bz_old = interp3(x,y,z,Bz,X_old,Y_old,Z_old,interp_method);
+
+B4d_old = cat(4,Bx_old,By_old,Bz_old);
+B4d_new = reshape((R_forw*reshape(B4d_old,[],3)')',size(B4d_old));
+
+Bx_new  = B4d_new(:,:,:,1);
+By_new  = B4d_new(:,:,:,2);
+Bz_new  = B4d_new(:,:,:,3);
+end
+
+
+
+
+
+% 
+% function [Bx,By,Bz] = B_rotate(x,y,z,Mm,dimensions,orient_mag)
+% %B_MULTIPLE 此处显示有关此函数的摘要
+% %   此处显示详细说明
+% %%
+% R_rev  = transpose(eul2rotm(orient_mag, 'ZYX'));
+% R_forw = eul2rotm(orient_mag, 'ZYX');
+% 
+% % Calculate the position vector before the rotation r_old (m)
+% xyz4d  = cat(4,x,y,z);
+% xyz4d  = reshape((R_rev*reshape(xyz4d,[],3)')',size(xyz4d));
+% 
+% % 
+% 
+% B      = B_1magnet(xyz4d(:,:,:,1),xyz4d(:,:,:,2),xyz4d(:,:,:,3),x,y,z,Mm,dimensions,orient_mag);
+% B      = reshape((R_forw*reshape(B,[],3)')',size(B));
+% 
+% Bx     = B(:,:,:,1);
+% By     = B(:,:,:,2);
+% Bz     = B(:,:,:,3);
+% end
+
+
+
+% r_old = quatrotate(eul2quat(-orient_mag),xyz);
+% rx    = reshape(r_old(:,1),[nx,ny,nz]);
+% ry    = reshape(r_old(:,2),[nx,ny,nz]);
+% rz    = reshape(r_old(:,3),[nx,ny,nz]);
+% 
+% % Evaluate the magnetic field components Bx, By, Bz at r_old
+% B_old = B_1magnet(rx,ry,rz,Mm,dimensions);
+% B_old_xyz   = reshape(B_old,nx*ny*nz,3);
+% 
+% % Rotate the magnetic field B evaluated at r_old to the new position
+% B_new = quatrotate(eul2quat(orient_mag),B_old_xyz);
+% Bx    = reshape(B_new(:,1),[nx,ny,nz]);
+% By    = reshape(B_new(:,2),[nx,ny,nz]);
+% Bz    = reshape(B_new(:,3),[nx,ny,nz]);
+
+
+
+% 
+% function [Bx,By,Bz] = B_rotate(x,y,z,Mm,dimensions,orient_mag)
+% %B_MULTIPLE 此处显示有关此函数的摘要
+% %   此处显示详细说明
+% R = eul2rotm(orient_mag, 'ZYX');
+% 
+% nx = size(x,1);
+% ny = size(x,2);
+% nz = size(x,3);
+% xyz4d = cat(4,x,y,z);
+% xyz   = reshape(xyz4d,nx*ny*nz,3);
+% 
+% %% Rotate
+% % Calculate the position vector before the rotation r_old (m)
+% r_old = quatrotate(eul2quat(-orient_mag),xyz);
+% rx    = reshape(r_old(:,1),[nx,ny,nz]);
+% ry    = reshape(r_old(:,2),[nx,ny,nz]);
+% rz    = reshape(r_old(:,3),[nx,ny,nz]);
+% 
+% % Evaluate the magnetic field components Bx, By, Bz at r_old
+% B_old = B_1magnet(rx,ry,rz,Mm,dimensions);
+% B_old_xyz   = reshape(B_old,nx*ny*nz,3);
+% 
+% % Rotate the magnetic field B evaluated at r_old to the new position
+% B_new = quatrotate(eul2quat(orient_mag),B_old_xyz);
+% Bx    = reshape(B_new(:,1),[nx,ny,nz]);
+% By    = reshape(B_new(:,2),[nx,ny,nz]);
+% Bz    = reshape(B_new(:,3),[nx,ny,nz]);
+% end
+

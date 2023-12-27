@@ -1,0 +1,45 @@
+clc;clear;close all
+addpath('functions/','data/')
+format default
+
+%%
+
+tic
+mu0        = 4*pi*1e-7;
+% N52 B666 magnets
+Mm         = 1.48/mu0;                        % [A/m]
+a          = 9.525*1e-3;                         % [m]
+b          = 9.525*1e-3;
+h          = 9.525*1e-3;
+dimensions = [a, b, h];                       % [m]
+
+xi         = -0.04;
+xf         = 0.04;
+yi         = -0.04;
+yf         = 0.04;
+zi         = -0.02;
+zf         = 0.02;
+
+% Simulation field range [m]
+[x,y,z]    = Mesh(1.5*xi,1.5*xf,1.5*yi,1.5*yf,1.5*zi,1.5*zf,60);          % [m]
+[X,Y,Z]    = Mesh(xi,xf,yi,yf,zi,zf,20);
+
+% One magnet
+% r_mag      = [0 0 0];
+% orient_mag = deg2rad([0 0 0]);
+% 
+% [Bx,By,Bz] = B_multiple(x,y,z,X,Y,Z,Mm,dimensions,r_mag,orient_mag,"spline");
+
+% Halbach Array
+HB_range      = 0.03;                         % [m]
+n_mag      = 6;
+[r_mag,orient_mag] = magnetPose(n_mag,HB_range,-0.002);
+
+[Bx,By,Bz] = B_multiple(x,y,z,X,Y,Z,Mm,dimensions,r_mag,orient_mag,"spline");
+%%
+plot_HBArray(X,Y,Z,Bx,By,Bz,r_mag,orient_mag,dimensions,1)
+
+toc
+
+
+
